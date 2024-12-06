@@ -5,7 +5,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
-public class LoginPage {
+public class loginPage {
 
     private WebDriver driver;
 
@@ -19,14 +19,16 @@ public class LoginPage {
     @FindBy(xpath = "//input[@data-test='login-button']")
     public WebElement loginButton;
 
-    public LoginPage(WebDriver driver) {
+    public loginPage(WebDriver driver) {
         this.driver = driver;
         PageFactory.initElements(driver,this);
     }
 
     public void authorize(String username, String password){
+        System.out.println("Username: " + username);
+        System.out.println("Password: " + password);
         usernameField.sendKeys(username);
-        usernameField.sendKeys(password);
+        passwordField.sendKeys(password);
         loginButton.click();
     }
 
