@@ -1,5 +1,7 @@
-import com.saucedemo.page_odject.LoginPage;
-import org.openqa.selenium.By;
+import com.saucedemo.page_odject.loginPage;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
@@ -9,20 +11,29 @@ import org.testng.annotations.Test;
 public class SauceDemoTest {
 
     ChromeDriver driver;
+    com.saucedemo.page_odject.loginPage loginPage;
+
+    Configurations configs;
+    Configuration config;
+
+
 
     @BeforeMethod
-    public void setUp(){
+    public void setUp() throws ConfigurationException {
         driver = new ChromeDriver();
+        loginPage = new loginPage(driver);
+        configs = new Configurations();
+        config = configs.properties("config.properties");
+        driver.get(config.getString("web.url"));
+
+
+
     }
 
     @Test
     public void openSauceDemoPageTest(){
 
-        driver.get("https://www.saucedemo.com");
-
-        LoginPage loginPage = new LoginPage(driver);
-        loginPage.authorize("standard_user","secret_sauce");
-
+         loginPage.authorize(config.getString("username"),config.getString("password"));
 
       Assert.assertEquals(driver.getCurrentUrl(),"https://www.saucedemo.com/inventory.html");
     }
@@ -30,20 +41,20 @@ public class SauceDemoTest {
     @Test
     public void addProductToTheCartTest(){
 
-        driver.get("https://www.saucedemo.com");
-
-        driver.findElement(By.id("user-name")).sendKeys("standard_user");
-        driver.findElement(By.name("password")).sendKeys("secret_sauce");
-
-        driver.findElement(By.xpath("//input[@data-test='login-button']")).click();
-        driver.getCurrentUrl();
+        loginPage.authorize(config.getString("username"), config.getString("password"));
+        // Проверяем, что мы попали на страницу с товарами после логина
+        String currentUrl = driver.getCurrentUrl();
+        System.out.println("Current URL: " + currentUrl);  // Добавим лог для отладки
+        Assert.assertEquals(currentUrl, "https://www.saucedemo.com/inventory.html");
         Assert.assertEquals(driver.getCurrentUrl(),"https://www.saucedemo.com/inventory.html");
     }
+
 
     @AfterMethod
     public void tearDown(){
         driver.close();
         driver.quit();
     }
+
 
 }
