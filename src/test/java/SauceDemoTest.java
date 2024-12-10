@@ -1,13 +1,21 @@
+import com.saucedemo.page_odject.CartPage;
+import com.saucedemo.page_odject.HeaderPage;
 import com.saucedemo.page_odject.InventoryPage;
 import com.saucedemo.page_odject.loginPage;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.assertj.core.api.Assertions;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.testng.asserts.Assertion;
+import org.openqa.selenium.WebElement;
+import java.time.Duration;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class SauceDemoTest {
 
@@ -17,14 +25,18 @@ public class SauceDemoTest {
 
     Configurations configs;
     Configuration config;
-
+    HeaderPage headerPage;
+    CartPage cartPage;
 
 
     @BeforeMethod
     public void setUp() throws ConfigurationException {
         driver = new ChromeDriver();
+       // driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10)); // Implicit waits явные-не рекомендует
         loginPage = new loginPage(driver);
         inventoryPage = new InventoryPage(driver);
+        headerPage =new HeaderPage(driver);
+        cartPage =new CartPage(driver);
 
         configs = new Configurations();
         config = configs.properties("config.properties");
@@ -44,13 +56,28 @@ public class SauceDemoTest {
     public void sauceDemoAddItemToTheCartTest(){
 
         loginPage.authorize(config.getString("username"), config.getString("password"));
-        // Проверяем, что мы попали на страницу с товарами после логина
-        String currentUrl = driver.getCurrentUrl();
-        System.out.println("Current URL: " + currentUrl);  // Добавим лог для отладки
-        Assert.assertEquals(currentUrl, "https://www.saucedemo.com/inventory.html");
-        Assert.assertEquals(driver.getCurrentUrl(),"https://www.saucedemo.com/inventory.html");
+        Assert.assertEquals(driver.getCurrentUrl(), "https://www.saucedemo.com/inventory.html");
 
         inventoryPage.selectItemByName("Backpack");
+        inventoryPage.selectItemByName("Bike Light");
+        assertThat(headerPage.getShoppingCartBadge().getText()).isEqualTo("2");
+
+        headerPage.getShoppingCartLink().click();
+        assertThat(cartPage.getCartItems().size()).isEqualTo(2);
+
+        // Classic way of asserting by contains
+        assertThat(cartPage.getCartItems().get(0).getText()).contains("Backpack");
+        assertThat(cartPage.getCartItems().get(1).getText()).contains("Bike Light");
+
+        // Functional programming style -> Handling partial matches
+        assertThat(cartPage.getCartItems())
+                .extracting(WebElement::getText)
+                .anyMatch(text -> text.contains("Bike Light"));
+
+        assertThat(cartPage.getCartItems())
+                .extracting(WebElement::getText)
+                .anyMatch(text -> text.contains("Backpack"));
+
 
     }
     @Test
@@ -111,11 +138,11 @@ public class SauceDemoTest {
     }
 
 
-//      @AfterMethod
-//     public void tearDown(){
-//       driver.close();
-//          driver.quit();
-//   }
+      @AfterMethod
+     public void tearDown(){
+      // driver.close();
+         // driver.quit();
+   }
 
 
 }
